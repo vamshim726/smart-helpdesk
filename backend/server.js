@@ -20,9 +20,11 @@ app.use(morgan('dev'));
 // Routes
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
+const kbRoutes = require('./routes/kb.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/kb', kbRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -62,6 +64,7 @@ connectToDatabase()
 			console.log(`📊 Health check: http://localhost:${PORT}/health`);
 			console.log(`🔐 Auth API: http://localhost:${PORT}/api/auth`);
 			console.log(`👑 Admin API: http://localhost:${PORT}/api/admin`);
+			console.log(`📚 KB API: http://localhost:${PORT}/api/kb`);
 		});
 	})
 	.catch((error) => {

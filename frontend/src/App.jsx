@@ -10,6 +10,8 @@ import Dashboard from './pages/Dashboard'
 import AdminUsers from './pages/AdminUsers'
 import ProtectedRoute, { AdminRoute, AgentRoute, UserRoute, StaffRoute } from './components/ProtectedRoute'
 import Navigation from './components/Navigation'
+import AdminKBList from './pages/AdminKBList'
+import AdminKBEditor from './pages/AdminKBEditor'
 
 // App Routes Component (needs to be inside Redux Provider)
 const AppRoutes = () => {
@@ -50,43 +52,16 @@ const AppRoutes = () => {
             </AdminRoute>
           } />
 
-          <Route path="/admin/stats" element={
+          {/* KB management */}
+          <Route path="/admin/kb" element={
             <AdminRoute>
-              <div className="min-h-screen bg-gray-50">
-                <Navigation />
-                <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                  <div className="px-4 py-6 sm:px-0">
-                    <h1 className="text-3xl font-bold text-gray-900">System Statistics</h1>
-                    <p className="mt-2 text-gray-600">View system-wide analytics and metrics.</p>
-                  </div>
-                  <div className="px-4 sm:px-0">
-                    <div className="bg-white shadow rounded-lg p-6">
-                      <p className="text-gray-500">Statistics interface coming soon...</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <AdminKBList />
             </AdminRoute>
           } />
-
-          {/* User routes */}
-          <Route path="/tickets" element={
-            <UserRoute>
-              <div className="min-h-screen bg-gray-50">
-                <Navigation />
-                <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                  <div className="px-4 py-6 sm:px-0">
-                    <h1 className="text-3xl font-bold text-gray-900">My Tickets</h1>
-                    <p className="mt-2 text-gray-600">View and manage your support tickets.</p>
-                  </div>
-                  <div className="px-4 sm:px-0">
-                    <div className="bg-white shadow rounded-lg p-6">
-                      <p className="text-gray-500">Tickets interface coming soon...</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </UserRoute>
+          <Route path="/admin/kb/:id" element={
+            <AdminRoute>
+              <AdminKBEditor />
+            </AdminRoute>
           } />
 
           {/* Agent and Admin routes */}
