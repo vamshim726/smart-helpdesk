@@ -3,6 +3,7 @@ import authReducer from './authSlice'
 import kbReducer from './kbSlice'
 import ticketsReducer from './ticketSlice'
 import agentReducer from './agentSlice'
+import configReducer from './configSlice'
 
 export const store = configureStore({
   reducer: {
@@ -10,5 +11,6 @@ export const store = configureStore({
     kb: kbReducer,
     tickets: ticketsReducer,
     agent: agentReducer,
+    config: configReducer,
   },
 })

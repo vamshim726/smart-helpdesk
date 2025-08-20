@@ -15,6 +15,7 @@ import AdminKBEditor from './pages/AdminKBEditor'
 import TicketList from './pages/TicketList'
 import TicketCreate from './pages/TicketCreate'
 import TicketDetail from './pages/TicketDetail'
+import AdminConfig from './pages/AdminConfig'
 
 // App Routes Component (needs to be inside Redux Provider)
 const AppRoutes = () => {
@@ -81,6 +82,13 @@ const AppRoutes = () => {
           <Route path="/admin/kb/:id" element={
             <AdminRoute>
               <AdminKBEditor />
+            </AdminRoute>
+          } />
+
+          {/* Admin config */}
+          <Route path="/admin/config" element={
+            <AdminRoute>
+              <AdminConfig />
             </AdminRoute>
           } />
 
