@@ -21,10 +21,12 @@ app.use(morgan('dev'));
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
 const kbRoutes = require('./routes/kb.routes');
+const ticketRoutes = require('./routes/ticket.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/kb', kbRoutes);
+app.use('/api/tickets', ticketRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -65,6 +67,7 @@ connectToDatabase()
 			console.log(`🔐 Auth API: http://localhost:${PORT}/api/auth`);
 			console.log(`👑 Admin API: http://localhost:${PORT}/api/admin`);
 			console.log(`📚 KB API: http://localhost:${PORT}/api/kb`);
+			console.log(`🎫 Tickets API: http://localhost:${PORT}/api/tickets`);
 		});
 	})
 	.catch((error) => {

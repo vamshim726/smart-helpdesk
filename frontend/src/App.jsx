@@ -12,6 +12,9 @@ import ProtectedRoute, { AdminRoute, AgentRoute, UserRoute, StaffRoute } from '.
 import Navigation from './components/Navigation'
 import AdminKBList from './pages/AdminKBList'
 import AdminKBEditor from './pages/AdminKBEditor'
+import TicketList from './pages/TicketList'
+import TicketCreate from './pages/TicketCreate'
+import TicketDetail from './pages/TicketDetail'
 
 // App Routes Component (needs to be inside Redux Provider)
 const AppRoutes = () => {
@@ -42,6 +45,23 @@ const AppRoutes = () => {
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } />
+
+          {/* Tickets */}
+          <Route path="/tickets" element={
+            <ProtectedRoute>
+              <TicketList />
+            </ProtectedRoute>
+          } />
+          <Route path="/tickets/new" element={
+            <ProtectedRoute>
+              <TicketCreate />
+            </ProtectedRoute>
+          } />
+          <Route path="/tickets/:id" element={
+            <ProtectedRoute>
+              <TicketDetail />
             </ProtectedRoute>
           } />
 
