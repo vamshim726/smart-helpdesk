@@ -8,6 +8,8 @@ const cookieParser = require('cookie-parser');
 dotenv.config();
 
 const { connectToDatabase } = require('./utils/db');
+const { initRealtime } = require('./utils/realtime');
+const { initMailer } = require('./utils/mailer');
 
 const app = express();
 
@@ -24,6 +26,7 @@ const kbRoutes = require('./routes/kb.routes');
 const ticketRoutes = require('./routes/ticket.routes');
 const agentRoutes = require('./routes/agent.routes');
 const configRoutes = require('./routes/config.routes');
+const notificationRoutes = require('./routes/notification.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
@@ -31,6 +34,7 @@ app.use('/api/kb', kbRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -65,7 +69,7 @@ const PORT = process.env.PORT || 8080;
 
 connectToDatabase()
 	.then(() => {
-		app.listen(PORT, () => {
+		const server = app.listen(PORT, () => {
 			console.log(`🚀 Server listening on port ${PORT}`);
 			console.log(`📊 Health check: http://localhost:${PORT}/health`);
 			console.log(`🔐 Auth API: http://localhost:${PORT}/api/auth`);
@@ -74,7 +78,10 @@ connectToDatabase()
 			console.log(`🎫 Tickets API: http://localhost:${PORT}/api/tickets`);
 			console.log(`🤖 Agent API: http://localhost:${PORT}/api/agent`);
 			console.log(`⚙️ Config API: http://localhost:${PORT}/api/config`);
+			console.log(`🔔 Notifications API: http://localhost:${PORT}/api/notifications`);
 		});
+		initRealtime(server);
+		initMailer();
 	})
 	.catch((error) => {
 		console.error('❌ Failed to start server:', error);

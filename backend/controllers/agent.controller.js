@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const Ticket = require('../models/Ticket');
 const KBArticle = require('../models/KBArticle');
 const AuditLog = require('../models/AuditLog');
+const { notifyTicketUpdate } = require('../services/notify');
 
 // simple keyword rules
 const RULES = [
@@ -138,8 +139,8 @@ const postReply = async (req, res) => {
 		if (!ticket) return res.status(404).json({ message: 'Ticket not found', error: 'NOT_FOUND' });
 		const newStatus = status || (ticket.status === 'waiting_human' ? 'triaged' : ticket.status);
 		await logStep(traceId, ticket._id, 'agent_reply', 'Agent sent reply', { replyLength: reply.length, status: newStatus, by: req.user.email });
-		// Note: In a real system, also store reply in messages collection and send email.
 		const updated = await Ticket.findByIdAndUpdate(id, { status: newStatus }, { new: true });
+		await notifyTicketUpdate({ ticket: updated, title: 'Ticket updated', message: `A reply was posted and status is now ${updated.status}` });
 		return res.status(200).json({ traceId, ticket: updated });
 	} catch (error) {
 		console.error('Reply error:', error);
@@ -158,6 +159,7 @@ const assignTicket = async (req, res) => {
 		const updated = await Ticket.findByIdAndUpdate(id, { assignee: assigneeId || req.user.sub, status: 'triaged' }, { new: true });
 		if (!updated) return res.status(404).json({ message: 'Ticket not found', error: 'NOT_FOUND' });
 		await logStep(traceId, updated._id, 'assign', 'Assigned ticket', { assigneeId: updated.assignee });
+		await notifyTicketUpdate({ ticket: updated, title: 'Ticket assigned', message: 'Ticket has been assigned to an agent.' });
 		return res.status(200).json({ traceId, ticket: updated });
 	} catch (error) {
 		console.error('Assign error:', error);
@@ -174,6 +176,7 @@ const reopenTicket = async (req, res) => {
 		const updated = await Ticket.findByIdAndUpdate(id, { status: 'open' }, { new: true });
 		if (!updated) return res.status(404).json({ message: 'Ticket not found', error: 'NOT_FOUND' });
 		await logStep(traceId, updated._id, 'reopen', 'Reopened ticket', {});
+		await notifyTicketUpdate({ ticket: updated, title: 'Ticket reopened', message: 'Ticket status changed to open.' });
 		return res.status(200).json({ traceId, ticket: updated });
 	} catch (error) {
 		console.error('Reopen error:', error);
@@ -190,6 +193,7 @@ const closeTicket = async (req, res) => {
 		const updated = await Ticket.findByIdAndUpdate(id, { status: 'closed' }, { new: true });
 		if (!updated) return res.status(404).json({ message: 'Ticket not found', error: 'NOT_FOUND' });
 		await logStep(traceId, updated._id, 'close', 'Closed ticket', {});
+		await notifyTicketUpdate({ ticket: updated, title: 'Ticket closed', message: 'Ticket has been closed.' });
 		return res.status(200).json({ traceId, ticket: updated });
 	} catch (error) {
 		console.error('Close error:', error);

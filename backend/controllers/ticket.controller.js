@@ -1,4 +1,5 @@
 const Ticket = require('../models/Ticket');
+const { notifyTicketUpdate } = require('../services/notify');
 
 // POST /api/tickets - create ticket (logged-in users)
 const createTicket = async (req, res) => {
@@ -13,6 +14,7 @@ const createTicket = async (req, res) => {
 			category,
 			createdBy: req.user.sub,
 		});
+		await notifyTicketUpdate({ ticket, title: 'Ticket created', message: 'Your ticket has been created.' });
 		return res.status(201).json({ message: 'Ticket created', ticket });
 	} catch (error) {
 		console.error('Create ticket error:', error);

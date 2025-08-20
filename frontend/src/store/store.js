@@ -4,6 +4,7 @@ import kbReducer from './kbSlice'
 import ticketsReducer from './ticketSlice'
 import agentReducer from './agentSlice'
 import configReducer from './configSlice'
+import notificationsReducer from './notificationSlice'
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +13,6 @@ export const store = configureStore({
     tickets: ticketsReducer,
     agent: agentReducer,
     config: configReducer,
+    notifications: notificationsReducer,
   },
 })

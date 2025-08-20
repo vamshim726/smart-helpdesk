@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { logoutUser, selectCurrentUser, selectIsAuthenticated, selectIsAdmin, selectIsAgent } from '../store/authSlice'
+import NotificationBell from './NotificationBell'
 
 const Navigation = () => {
   const dispatch = useDispatch()
@@ -65,21 +66,22 @@ const Navigation = () => {
                 Tickets
               </Link>
               
-              {/* Agent and Admin can see ticket management */}
               {(isAgent || isAdmin) && (
                 <Link to="/ticket-management" className={getNavLinkClass('/ticket-management')}>
                   Ticket Management
                 </Link>
               )}
               
-              {/* Admin-only menu items */}
               {isAdmin && (
                 <>
+                  <Link to="/admin/kb" className={getNavLinkClass('/admin/kb')}>
+                    KB
+                  </Link>
                   <Link to="/admin/users" className={getNavLinkClass('/admin/users')}>
                     Users
                   </Link>
-                  <Link to="/admin/stats" className={getNavLinkClass('/admin/stats')}>
-                    Statistics
+                  <Link to="/admin/config" className={getNavLinkClass('/admin/config')}>
+                    Config
                   </Link>
                 </>
               )}
@@ -87,9 +89,9 @@ const Navigation = () => {
           </div>
 
           {/* User menu and mobile menu button */}
-          <div className="flex items-center">
-            {/* User menu */}
-            <div className="relative ml-3">
+          <div className="flex items-center space-x-3">
+            <NotificationBell />
+            <div className="relative ml-1">
               <div>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -132,14 +134,6 @@ const Navigation = () => {
                     onClick={() => setIsUserMenuOpen(false)}
                   >
                     Your Profile
-                  </Link>
-                  
-                  <Link
-                    to="/settings"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => setIsUserMenuOpen(false)}
-                  >
-                    Settings
                   </Link>
                   
                   <button
