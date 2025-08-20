@@ -4,6 +4,10 @@ import Navigation from '../components/Navigation'
 import { createTicket, selectTicketsLoading, selectTicketsError } from '../store/ticketSlice'
 import { useNavigate } from 'react-router-dom'
 
+const inputBase = 'w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400'
+const btnPrimary = 'inline-flex items-center justify-center px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition disabled:opacity-50 disabled:cursor-not-allowed'
+const card = 'bg-white shadow-sm rounded-lg p-6'
+
 const TicketCreate = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -28,70 +32,78 @@ const TicketCreate = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <div className="max-w-3xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <h1 className="text-3xl font-bold text-gray-900">Create Ticket</h1>
-          <p className="mt-2 text-gray-600">Describe your issue and submit a ticket.</p>
-        </div>
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <header className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Create Ticket</h1>
+          <p className="mt-2 text-sm sm:text-base text-gray-600">Describe your issue and submit a ticket. Fields marked with <span className="text-red-600">*</span> are required.</p>
+        </header>
 
         {error && (
-          <div className="px-4 sm:px-0 mb-4">
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">{error?.message || 'An error occurred'}</div>
+          <div className="mb-6">
+            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 border border-red-200">{error?.message || 'An error occurred'}</div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="px-4 sm:px-0 bg-white shadow rounded-lg p-6 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+        <form onSubmit={handleSubmit} className={`${card} space-y-6`}>
+          <div className="space-y-2">
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title <span className="text-red-600">*</span></label>
             <input
+              id="title"
               name="title"
               value={form.title}
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              placeholder="Brief summary"
+              className={inputBase}
+              placeholder="Brief summary (e.g., App won't open)"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+          <div className="space-y-2">
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description <span className="text-red-600">*</span></label>
             <textarea
+              id="description"
               name="description"
               value={form.description}
               onChange={handleChange}
               required
               rows={10}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              className={`${inputBase} resize-y`}
               placeholder="Describe the issue with as much detail as possible"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <select
-              name="category"
-              value={form.category}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-            >
-              <option value="billing">Billing</option>
-              <option value="tech">Technical</option>
-              <option value="shipping">Shipping</option>
-              <option value="other">Other</option>
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category</label>
+              <select
+                id="category"
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                className={inputBase + " cursor-pointer"}
+              >
+                <option value="billing">Billing</option>
+                <option value="tech">Technical</option>
+                <option value="shipping">Shipping</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="pt-2 flex items-center justify-end gap-3">
             <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+              type="button"
+              onClick={() => navigate('/tickets')}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition cursor-pointer"
             >
-              Submit Ticket
+              Cancel
+            </button>
+            <button type="submit" disabled={loading} className={btnPrimary + " cursor-pointer"}>
+              {loading ? 'Submitting…' : 'Submit Ticket'}
             </button>
           </div>
         </form>
-      </div>
+      </main>
     </div>
   )
 }

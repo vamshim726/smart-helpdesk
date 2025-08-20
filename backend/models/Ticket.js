@@ -23,6 +23,9 @@ const ticketSchema = new mongoose.Schema(
 		createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 		assignee: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 		agentSuggestion: { type: mongoose.Schema.Types.ObjectId, ref: 'KBArticle', default: null },
+		// SLA tracking
+		slaBreached: { type: Boolean, default: false, index: true },
+		slaBreachedAt: { type: Date, default: null },
 	},
 	{ timestamps: true }
 );
@@ -31,6 +34,7 @@ const ticketSchema = new mongoose.Schema(
 ticketSchema.index({ createdBy: 1, createdAt: -1 });
 ticketSchema.index({ assignee: 1 });
 ticketSchema.index({ status: 1 });
+ticketSchema.index({ updatedAt: -1 });
 
 const Ticket = mongoose.model('Ticket', ticketSchema);
 module.exports = Ticket;

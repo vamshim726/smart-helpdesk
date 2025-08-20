@@ -18,8 +18,39 @@ router.get('/', async (req, res) => {
 router.post('/:id/read', async (req, res) => {
 	try {
 		const { id } = req.params;
-		const updated = await Notification.findOneAndUpdate({ _id: id, user: req.user.sub }, { isRead: true }, { new: true });
-		if (!updated) return res.status(404).json({ message: 'Notification not found', error: 'NOT_FOUND' });
+		
+		// Validate ID parameter
+		if (!id || id === 'undefined' || id === 'null') {
+			return res.status(400).json({ 
+				message: 'Invalid notification ID', 
+				error: 'INVALID_ID',
+				receivedId: id 
+			});
+		}
+		
+		// Validate ObjectId format
+		if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+			return res.status(400).json({ 
+				message: 'Invalid notification ID format', 
+				error: 'INVALID_ID_FORMAT',
+				receivedId: id 
+			});
+		}
+		
+		const updated = await Notification.findOneAndUpdate(
+			{ _id: id, user: req.user.sub }, 
+			{ isRead: true }, 
+			{ new: true }
+		);
+		
+		if (!updated) {
+			return res.status(404).json({ 
+				message: 'Notification not found', 
+				error: 'NOT_FOUND',
+				searchedId: id 
+			});
+		}
+		
 		return res.status(200).json({ notification: updated });
 	} catch (error) {
 		console.error('Mark read error:', error);

@@ -1,9 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { v4 as uuidv4 } from 'uuid'
 
 const authHeaders = (getState) => {
   const token = getState().auth.token
   return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' }
 }
+
+// Module-level in-flight guard to prevent duplicate requests for the same ticket
+const inFlightReplies = new Set()
 
 export const fetchSuggestion = createAsyncThunk(
   'agent/suggestion',
@@ -35,18 +39,30 @@ export const fetchAuditLogs = createAsyncThunk(
 
 export const agentSendReply = createAsyncThunk(
   'agent/reply',
-  async ({ id, reply, status }, { getState, rejectWithValue }) => {
+  async ({ id, reply, status, traceId: providedTraceId }, { getState, rejectWithValue }) => {
     try {
+      const traceId = providedTraceId || uuidv4()
       const res = await fetch(`/api/agent/tickets/${id}/reply`, {
         method: 'POST',
         headers: authHeaders(getState),
-        body: JSON.stringify({ reply, status }),
+        body: JSON.stringify({ reply, status, traceId }),
       })
       const data = await res.json()
       if (!res.ok) return rejectWithValue(data)
-      return data
+      return { ticketId: id, ...data }
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
+    }
+  },
+  {
+    condition: ({ id }, { getState }) => {
+      if (!id) return false
+      if (inFlightReplies.has(id)) return false
+      // Optimistically lock before reducer handles pending
+      inFlightReplies.add(id)
+      const state = getState()
+      const pending = state.agent?.pendingReplies?.[id]
+      return !pending
     }
   }
 )
@@ -108,6 +124,7 @@ const agentSlice = createSlice({
     logs: {}, // keyed by ticketId
     loading: false,
     error: null,
+    pendingReplies: {}, // keyed by ticketId
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -125,9 +142,25 @@ const agentSlice = createSlice({
         state.logs[ticketId] = logs
       })
 
-      .addCase(agentSendReply.pending, (state) => { state.loading = true; state.error = null })
-      .addCase(agentSendReply.fulfilled, (state) => { state.loading = false })
-      .addCase(agentSendReply.rejected, (state, action) => { state.loading = false; state.error = action.payload || action.error })
+      .addCase(agentSendReply.pending, (state, action) => {
+        state.loading = true
+        state.error = null
+        const ticketId = action.meta.arg?.id
+        if (ticketId) state.pendingReplies[ticketId] = true
+      })
+      .addCase(agentSendReply.fulfilled, (state, action) => {
+        state.loading = false
+        const ticketId = action.meta.arg?.id || action.payload?.ticketId
+        if (ticketId) delete state.pendingReplies[ticketId]
+        if (ticketId) inFlightReplies.delete(ticketId)
+      })
+      .addCase(agentSendReply.rejected, (state, action) => {
+        state.loading = false
+        const ticketId = action.meta.arg?.id
+        if (ticketId) delete state.pendingReplies[ticketId]
+        if (ticketId) inFlightReplies.delete(ticketId)
+        state.error = action.payload || action.error
+      })
 
       .addCase(agentAssign.fulfilled, (state) => {})
       .addCase(agentReopen.fulfilled, (state) => {})

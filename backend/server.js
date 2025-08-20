@@ -10,11 +10,25 @@ dotenv.config();
 const { connectToDatabase } = require('./utils/db');
 const { initRealtime } = require('./utils/realtime');
 const { initMailer } = require('./utils/mailer');
+const { scheduleNightly } = require('./jobs/slaChecker');
 
 const app = express();
 
 // Middlewares
-app.use(cors({ origin: true, credentials: true }));
+// CORS configuration
+const corsOptions = {
+	origin: ["http://localhost:5173", "http://localhost:3000", "http://localhost:4173"], 
+	credentials: true,
+	methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+	allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+	preflightContinue: false,
+	optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 app.use(morgan('dev'));
@@ -42,6 +56,15 @@ app.get('/health', (req, res) => {
 		status: 'ok',
 		timestamp: new Date().toISOString(),
 		environment: process.env.NODE_ENV || 'development'
+	});
+});
+
+// Socket.IO health check
+app.get('/socket-health', (req, res) => {
+	return res.status(200).json({ 
+		status: 'ok',
+		socket: 'enabled',
+		timestamp: new Date().toISOString()
 	});
 });
 
@@ -82,6 +105,7 @@ connectToDatabase()
 		});
 		initRealtime(server);
 		initMailer();
+		scheduleNightly();
 	})
 	.catch((error) => {
 		console.error('❌ Failed to start server:', error);

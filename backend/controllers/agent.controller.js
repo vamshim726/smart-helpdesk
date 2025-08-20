@@ -53,6 +53,30 @@ const logStep = async (traceId, ticketId, step, message, metadata) => {
 	await AuditLog.create({ traceId, ticket: ticketId, step, message, metadata });
 };
 
+// In-memory idempotency store for agent replies (traceId -> timestamp)
+const processedReplyTraceIds = new Map();
+const REPLY_TRACE_TTL_MS = 30 * 1000;
+
+const isReplyTraceProcessed = (traceId) => {
+	const ts = processedReplyTraceIds.get(traceId);
+	if (!ts) return false;
+	if (Date.now() - ts > REPLY_TRACE_TTL_MS) {
+		processedReplyTraceIds.delete(traceId);
+		return false;
+	}
+	return true;
+};
+
+const markReplyTraceProcessed = (traceId) => {
+	processedReplyTraceIds.set(traceId, Date.now());
+	if (processedReplyTraceIds.size > 500) {
+		const now = Date.now();
+		for (const [tid, ts] of processedReplyTraceIds.entries()) {
+			if (now - ts > REPLY_TRACE_TTL_MS) processedReplyTraceIds.delete(tid);
+		}
+	}
+};
+
 // POST /api/agent/triage { ticketId, autoClose=true, confidenceThreshold=0.7 }
 const triageTicket = async (req, res) => {
 	const traceId = req.body.traceId || uuidv4();
@@ -135,12 +159,21 @@ const postReply = async (req, res) => {
 		const { id } = req.params;
 		const { reply, status } = req.body;
 		if (!reply) return res.status(400).json({ message: 'Reply text is required', error: 'MISSING_FIELDS' });
+
+		// Idempotency: if already processed, return current state
+		if (isReplyTraceProcessed(traceId)) {
+			const current = await Ticket.findById(id);
+			if (!current) return res.status(404).json({ message: 'Ticket not found', error: 'NOT_FOUND' });
+			return res.status(200).json({ traceId, ticket: current, idempotent: true });
+		}
+
 		const ticket = await Ticket.findById(id);
 		if (!ticket) return res.status(404).json({ message: 'Ticket not found', error: 'NOT_FOUND' });
 		const newStatus = status || (ticket.status === 'waiting_human' ? 'triaged' : ticket.status);
 		await logStep(traceId, ticket._id, 'agent_reply', 'Agent sent reply', { replyLength: reply.length, status: newStatus, by: req.user.email });
 		const updated = await Ticket.findByIdAndUpdate(id, { status: newStatus }, { new: true });
 		await notifyTicketUpdate({ ticket: updated, title: 'Ticket updated', message: `A reply was posted and status is now ${updated.status}` });
+		markReplyTraceProcessed(traceId);
 		return res.status(200).json({ traceId, ticket: updated });
 	} catch (error) {
 		console.error('Reply error:', error);

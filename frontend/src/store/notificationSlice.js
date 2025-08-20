@@ -19,8 +19,20 @@ export const markRead = createAsyncThunk(
   'notifications/read',
   async (id, { getState, rejectWithValue }) => {
     try {
+      // Validate ID before making request
+      if (!id || id === 'undefined' || id === 'null') {
+        return rejectWithValue({ 
+          message: 'Invalid notification ID', 
+          error: 'INVALID_ID',
+          receivedId: id 
+        })
+      }
+      
       const token = getState().auth.token
-      const res = await fetch(`/api/notifications/${id}/read`, { method: 'POST', headers: token ? { 'Authorization': `Bearer ${token}` } : {} })
+      const res = await fetch(`/api/notifications/${id}/read`, { 
+        method: 'POST', 
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {} 
+      })
       const data = await res.json()
       if (!res.ok) return rejectWithValue(data)
       return data.notification
@@ -40,7 +52,24 @@ const notificationSlice = createSlice({
   },
   reducers: {
     pushNotification: (state, action) => {
-      state.items = [action.payload, ...state.items].slice(0, 50)
+      // Ensure the notification has the correct structure
+      const notification = action.payload;
+      if (!notification._id) {
+        console.error('Received notification without _id:', notification);
+        return;
+      }
+      
+      // Check if notification already exists to prevent duplicates
+      const existingIndex = state.items.findIndex(item => item._id === notification._id);
+      if (existingIndex !== -1) {
+        console.log('Notification already exists, updating instead of adding:', notification._id);
+        // Update existing notification if needed
+        state.items[existingIndex] = { ...state.items[existingIndex], ...notification };
+        return;
+      }
+      
+      // Add new notification
+      state.items = [notification, ...state.items].slice(0, 50)
       state.unreadCount += 1
     },
     setSocketConnected: (state, action) => { state.socketConnected = action.payload },
@@ -60,6 +89,10 @@ const notificationSlice = createSlice({
         const idx = state.items.findIndex(n => n._id === upd._id)
         if (idx !== -1) state.items[idx] = upd
         state.unreadCount = state.items.filter(n => !n.isRead).length
+      })
+      .addCase(markRead.rejected, (state, action) => {
+        console.error('Failed to mark notification as read:', action.payload)
+        state.error = action.payload
       })
   }
 })
