@@ -4,7 +4,8 @@ let socket
 
 export const connectSocket = (userId) => {
   if (socket) return socket
-  socket = io('/', { withCredentials: true })
+  const url = `${window.location.protocol}//${window.location.hostname}:8080`
+  socket = io(url, { withCredentials: true })
   socket.on('connect', () => {
     socket.emit('auth', userId)
   })

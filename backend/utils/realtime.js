@@ -2,10 +2,15 @@ let ioInstance = null;
 const userIdToSocketIds = new Map();
 
 const initRealtime = (server) => {
-	const { Server } = require('socket.io');
-	ioInstance = new Server(server, { cors: { origin: true, credentials: true } });
+	const socketIo = require('socket.io');
+	// Support both old-style function export and new Server class
+	const io = typeof socketIo.Server === 'function'
+		? new socketIo.Server(server, { cors: { origin: true, credentials: true } })
+		: socketIo(server, { cors: { origin: true, credentials: true } });
 
-	ioInstance.on('connection', (socket) => {
+	ioInstance = io;
+
+	io.on('connection', (socket) => {
 		// client should emit 'auth' event with userId after connecting
 		socket.on('auth', (userId) => {
 			if (!userId) return;
