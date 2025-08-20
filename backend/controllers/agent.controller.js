@@ -106,4 +106,115 @@ const triageTicket = async (req, res) => {
 	}
 };
 
-module.exports = { triageTicket };
+// Suggestion: GET /api/agent/suggestion/:ticketId (staff)
+const getSuggestion = async (req, res) => {
+	const traceId = req.query.traceId || uuidv4();
+	try {
+		const { ticketId } = req.params;
+		let ticket = await Ticket.findById(ticketId).populate('createdBy', 'name email');
+		if (!ticket) return res.status(404).json({ message: 'Ticket not found', error: 'NOT_FOUND' });
+		await logStep(traceId, ticket._id, 'suggestion_start', 'Generating suggestion', {});
+		const classification = classify(`${ticket.title}\n${ticket.description}`);
+		const kbArticles = await searchKB(`${ticket.title} ${ticket.description}`.slice(0, 200), 3);
+		const reply = draftReply(ticket, kbArticles);
+		await logStep(traceId, ticket._id, 'suggestion_ready', 'Suggestion ready', { classification, kbIds: kbArticles.map(a=>a._id) });
+		return res.status(200).json({ traceId, classification, articles: kbArticles, reply });
+	} catch (error) {
+		console.error('Suggestion error:', error);
+		await logStep(traceId, req.params.ticketId, 'error', 'Suggestion failed', { message: error.message });
+		return res.status(500).json({ message: 'Internal server error', error: 'INTERNAL_ERROR', traceId });
+	}
+};
+
+// Reply: POST /api/tickets/:id/reply (staff)
+// body: { reply, status } (status optional: resolved/closed/waiting_human)
+const postReply = async (req, res) => {
+	const traceId = req.body.traceId || uuidv4();
+	try {
+		const { id } = req.params;
+		const { reply, status } = req.body;
+		if (!reply) return res.status(400).json({ message: 'Reply text is required', error: 'MISSING_FIELDS' });
+		const ticket = await Ticket.findById(id);
+		if (!ticket) return res.status(404).json({ message: 'Ticket not found', error: 'NOT_FOUND' });
+		const newStatus = status || (ticket.status === 'waiting_human' ? 'triaged' : ticket.status);
+		await logStep(traceId, ticket._id, 'agent_reply', 'Agent sent reply', { replyLength: reply.length, status: newStatus, by: req.user.email });
+		// Note: In a real system, also store reply in messages collection and send email.
+		const updated = await Ticket.findByIdAndUpdate(id, { status: newStatus }, { new: true });
+		return res.status(200).json({ traceId, ticket: updated });
+	} catch (error) {
+		console.error('Reply error:', error);
+		await logStep(traceId, req.params.id, 'error', 'Reply failed', { message: error.message });
+		return res.status(500).json({ message: 'Internal server error', error: 'INTERNAL_ERROR', traceId });
+	}
+};
+
+// Assign: POST /api/tickets/:id/assign (staff)
+// body: { assigneeId }
+const assignTicket = async (req, res) => {
+	const traceId = req.body.traceId || uuidv4();
+	try {
+		const { id } = req.params;
+		const { assigneeId } = req.body;
+		const updated = await Ticket.findByIdAndUpdate(id, { assignee: assigneeId || req.user.sub, status: 'triaged' }, { new: true });
+		if (!updated) return res.status(404).json({ message: 'Ticket not found', error: 'NOT_FOUND' });
+		await logStep(traceId, updated._id, 'assign', 'Assigned ticket', { assigneeId: updated.assignee });
+		return res.status(200).json({ traceId, ticket: updated });
+	} catch (error) {
+		console.error('Assign error:', error);
+		await logStep(traceId, req.params.id, 'error', 'Assign failed', { message: error.message });
+		return res.status(500).json({ message: 'Internal server error', error: 'INTERNAL_ERROR', traceId });
+	}
+};
+
+// Reopen: POST /api/tickets/:id/reopen (staff)
+const reopenTicket = async (req, res) => {
+	const traceId = req.body.traceId || uuidv4();
+	try {
+		const { id } = req.params;
+		const updated = await Ticket.findByIdAndUpdate(id, { status: 'open' }, { new: true });
+		if (!updated) return res.status(404).json({ message: 'Ticket not found', error: 'NOT_FOUND' });
+		await logStep(traceId, updated._id, 'reopen', 'Reopened ticket', {});
+		return res.status(200).json({ traceId, ticket: updated });
+	} catch (error) {
+		console.error('Reopen error:', error);
+		await logStep(traceId, req.params.id, 'error', 'Reopen failed', { message: error.message });
+		return res.status(500).json({ message: 'Internal server error', error: 'INTERNAL_ERROR', traceId });
+	}
+};
+
+// Close: POST /api/tickets/:id/close (staff)
+const closeTicket = async (req, res) => {
+	const traceId = req.body.traceId || uuidv4();
+	try {
+		const { id } = req.params;
+		const updated = await Ticket.findByIdAndUpdate(id, { status: 'closed' }, { new: true });
+		if (!updated) return res.status(404).json({ message: 'Ticket not found', error: 'NOT_FOUND' });
+		await logStep(traceId, updated._id, 'close', 'Closed ticket', {});
+		return res.status(200).json({ traceId, ticket: updated });
+	} catch (error) {
+		console.error('Close error:', error);
+		await logStep(traceId, req.params.id, 'error', 'Close failed', { message: error.message });
+		return res.status(500).json({ message: 'Internal server error', error: 'INTERNAL_ERROR', traceId });
+	}
+};
+
+const getAuditLogs = async (req, res) => {
+	try {
+		const { ticketId } = req.params;
+		const logs = await AuditLog.find({ ticket: ticketId }).sort({ createdAt: 1 });
+		return res.status(200).json({ logs });
+	} catch (error) {
+		console.error('Get logs error:', error);
+		return res.status(500).json({ message: 'Internal server error', error: 'INTERNAL_ERROR' });
+	}
+};
+
+module.exports = {
+	triageTicket: triageTicket,
+	getSuggestion,
+	postReply,
+	assignTicket,
+	reopenTicket,
+	closeTicket,
+	getAuditLogs,
+};

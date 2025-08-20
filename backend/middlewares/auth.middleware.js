@@ -64,9 +64,13 @@ const requireAdmin = requireRole('admin');
 // User or Admin Access Middleware
 const requireUserOrAdmin = requireRole(['user', 'admin']);
 
+// Staff (Agent or Admin)
+const requireStaff = requireRole(['agent', 'admin']);
+
 module.exports = { 
 	auth, 
 	requireRole, 
 	requireAdmin, 
-	requireUserOrAdmin 
+	requireUserOrAdmin,
+	requireStaff,
 };
