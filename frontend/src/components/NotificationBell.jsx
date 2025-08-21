@@ -113,8 +113,7 @@ const NotificationBell = () => {
           <div className="p-3 border-b text-sm font-medium">Notifications</div>
           <div className="max-h-80 overflow-y-auto divide-y">
             {items.map((n) => {
-              console.log('Notification data:', n); // Debug log
-              return (
+               return (
                 <div key={n._id} className={`p-3 text-sm ${n.isRead ? 'bg-white' : 'bg-blue-50'}`}>
                   <div className="font-medium text-gray-900">{n.title}</div>
                   <div className="text-gray-600">{n.message}</div>
