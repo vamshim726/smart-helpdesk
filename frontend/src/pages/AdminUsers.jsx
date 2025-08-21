@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { selectAuthToken } from '../store/authSlice'
+import { API_BASE } from '../utils/api'
 import Navigation from '../components/Navigation'
 import LoadingSpinner from '../components/LoadingSpinner'
 
@@ -17,7 +18,7 @@ const AdminUsers = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch(`${API_BASE}/admin/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -39,7 +40,7 @@ const AdminUsers = () => {
 
   const handleRoleUpdate = async (userId, newRole) => {
     try {
-      const response = await fetch(`/api/admin/users/${userId}/role`, {
+      const response = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -61,7 +62,7 @@ const AdminUsers = () => {
 
   const handleStatusToggle = async (userId) => {
     try {
-      const response = await fetch(`/api/admin/users/${userId}/status`, {
+      const response = await fetch(`${API_BASE}/admin/users/${userId}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
