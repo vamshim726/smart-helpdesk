@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import toast from 'react-hot-toast'
 import { v4 as uuidv4 } from 'uuid'
+import { API_BASE } from '../utils/api'
 
 const authHeaders = (getState) => {
   const token = getState().auth.token
@@ -14,7 +15,7 @@ export const fetchSuggestion = createAsyncThunk(
   'agent/suggestion',
   async (ticketId, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/agent/suggestion/${ticketId}`, { headers: authHeaders(getState) })
+      const res = await fetch(`${API_BASE}/agent/suggestion/${ticketId}`, { headers: authHeaders(getState) })
       const data = await res.json()
       if (!res.ok) { toast.error(data?.message || 'Failed to fetch suggestion'); return rejectWithValue(data) }
       return { ticketId, ...data }
@@ -28,7 +29,7 @@ export const fetchAuditLogs = createAsyncThunk(
   'agent/logs',
   async (ticketId, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/agent/logs/${ticketId}`, { headers: authHeaders(getState) })
+      const res = await fetch(`${API_BASE}/agent/logs/${ticketId}`, { headers: authHeaders(getState) })
       const data = await res.json()
       // Do not show a toast here to avoid surfacing permission errors to regular users.
       if (!res.ok) { return rejectWithValue(data) }
@@ -44,7 +45,7 @@ export const agentSendReply = createAsyncThunk(
   async ({ id, reply, status, traceId: providedTraceId }, { getState, rejectWithValue }) => {
     try {
       const traceId = providedTraceId || uuidv4()
-      const res = await fetch(`/api/agent/tickets/${id}/reply`, {
+      const res = await fetch(`${API_BASE}/agent/tickets/${id}/reply`, {
         method: 'POST',
         headers: authHeaders(getState),
         body: JSON.stringify({ reply, status, traceId }),
@@ -74,7 +75,7 @@ export const agentAssign = createAsyncThunk(
   'agent/assign',
   async ({ id, assigneeId }, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/agent/tickets/${id}/assign`, {
+      const res = await fetch(`${API_BASE}/agent/tickets/${id}/assign`, {
         method: 'POST',
         headers: authHeaders(getState),
         body: JSON.stringify({ assigneeId }),
@@ -93,7 +94,7 @@ export const agentReopen = createAsyncThunk(
   'agent/reopen',
   async (id, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/agent/tickets/${id}/reopen`, {
+      const res = await fetch(`${API_BASE}/agent/tickets/${id}/reopen`, {
         method: 'POST', headers: authHeaders(getState)
       })
       const data = await res.json()
@@ -110,7 +111,7 @@ export const agentClose = createAsyncThunk(
   'agent/close',
   async (id, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/agent/tickets/${id}/close`, {
+      const res = await fetch(`${API_BASE}/agent/tickets/${id}/close`, {
         method: 'POST', headers: authHeaders(getState)
       })
       const data = await res.json()

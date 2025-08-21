@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import toast from 'react-hot-toast'
+import { API_BASE } from '../utils/api'
 
 const authHeaders = (getState) => {
   const token = getState().auth.token
@@ -10,7 +11,7 @@ export const loadConfig = createAsyncThunk(
   'config/load',
   async (_, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch('/api/config', { headers: authHeaders(getState) })
+      const res = await fetch(`${API_BASE}/config`, { headers: authHeaders(getState) })
       const data = await res.json()
       if (!res.ok) { toast.error(data?.message || 'Failed to load configuration'); return rejectWithValue(data) }
       return data.config
@@ -24,7 +25,7 @@ export const saveConfig = createAsyncThunk(
   'config/save',
   async (payload, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch('/api/config', {
+      const res = await fetch(`${API_BASE}/config`, {
         method: 'PUT',
         headers: authHeaders(getState),
         body: JSON.stringify(payload),

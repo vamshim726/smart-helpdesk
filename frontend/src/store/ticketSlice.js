@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import toast from 'react-hot-toast'
+import { API_BASE } from '../utils/api'
 
 const authHeaders = (getState) => {
   const token = getState().auth.token
@@ -10,7 +11,7 @@ export const createTicket = createAsyncThunk(
   'tickets/create',
   async (payload, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch('/api/tickets', {
+      const res = await fetch(`${API_BASE}/tickets`, {
         method: 'POST',
         headers: authHeaders(getState),
         body: JSON.stringify(payload),
@@ -30,7 +31,7 @@ export const fetchTickets = createAsyncThunk(
   async (params = {}, { getState, rejectWithValue }) => {
     try {
       const query = new URLSearchParams(params).toString()
-      const res = await fetch(`/api/tickets${query ? `?${query}` : ''}`, {
+      const res = await fetch(`${API_BASE}/tickets${query ? `?${query}` : ''}`, {
         headers: authHeaders(getState),
       })
       const data = await res.json()
@@ -46,7 +47,7 @@ export const fetchTicket = createAsyncThunk(
   'tickets/detail',
   async (id, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/tickets/${id}`, {
+      const res = await fetch(`${API_BASE}/tickets/${id}`, {
         headers: authHeaders(getState),
       })
       const data = await res.json()
@@ -62,7 +63,7 @@ export const addTicketReply = createAsyncThunk(
   'tickets/addReply',
   async ({ id, body, kbRefs, status }, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/tickets/${id}/replies`, {
+      const res = await fetch(`${API_BASE}/tickets/${id}/replies`, {
         method: 'POST',
         headers: authHeaders(getState),
         body: JSON.stringify({ body, kbRefs, status }),

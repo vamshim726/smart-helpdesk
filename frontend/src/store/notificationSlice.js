@@ -1,11 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { API_BASE } from '../utils/api'
 
 export const fetchNotifications = createAsyncThunk(
   'notifications/fetch',
   async (_, { getState, rejectWithValue }) => {
     try {
       const token = getState().auth.token
-      const res = await fetch('/api/notifications', { headers: token ? { 'Authorization': `Bearer ${token}` } : {} })
+      const res = await fetch(`${API_BASE}/notifications`, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} })
       const data = await res.json()
       if (!res.ok) return rejectWithValue(data)
       return data.notifications
@@ -29,7 +30,7 @@ export const markRead = createAsyncThunk(
       }
       
       const token = getState().auth.token
-      const res = await fetch(`/api/notifications/${id}/read`, { 
+      const res = await fetch(`${API_BASE}/notifications/${id}/read`, { 
         method: 'POST', 
         headers: token ? { 'Authorization': `Bearer ${token}` } : {} 
       })

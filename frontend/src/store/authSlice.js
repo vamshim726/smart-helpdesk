@@ -1,12 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import toast from 'react-hot-toast'
+import { API_BASE } from '../utils/api'
 
 // Async thunk for login
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -39,7 +40,7 @@ export const registerUser = createAsyncThunk(
   'auth/registerUser',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,7 +92,7 @@ export const fetchUserProfile = createAsyncThunk(
 
       if (!token) { return rejectWithValue({ message: 'No token available', error: 'NO_TOKEN' }) }
 
-      const response = await fetch('/api/auth/profile', {
+      const response = await fetch(`${API_BASE}/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

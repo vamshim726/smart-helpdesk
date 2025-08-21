@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import toast from 'react-hot-toast'
+import { API_BASE } from '../utils/api'
 
 const buildAuthHeaders = (getState) => {
   const token = getState().auth.token
@@ -13,7 +14,7 @@ export const fetchKbList = createAsyncThunk(
   async (params = {}, { getState, rejectWithValue }) => {
     try {
       const query = new URLSearchParams(params).toString()
-      const res = await fetch(`/api/kb${query ? `?${query}` : ''}`)
+      const res = await fetch(`${API_BASE}/kb${query ? `?${query}` : ''}`)
       const data = await res.json()
       if (!res.ok) { toast.error(data?.message || 'Failed to load articles'); return rejectWithValue(data) }
       return data
@@ -27,7 +28,7 @@ export const fetchKbArticle = createAsyncThunk(
   'kb/fetchOne',
   async (id, { rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/kb/${id}`)
+      const res = await fetch(`${API_BASE}/kb/${id}`)
       const data = await res.json()
       if (!res.ok) { toast.error(data?.message || 'Failed to load article'); return rejectWithValue(data) }
       return data.article
@@ -41,7 +42,7 @@ export const createKbArticle = createAsyncThunk(
   'kb/create',
   async (payload, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch('/api/kb', {
+      const res = await fetch(`${API_BASE}/kb`, {
         method: 'POST',
         headers: buildAuthHeaders(getState),
         body: JSON.stringify(payload),
@@ -60,7 +61,7 @@ export const updateKbArticle = createAsyncThunk(
   'kb/update',
   async ({ id, ...payload }, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/kb/${id}`, {
+      const res = await fetch(`${API_BASE}/kb/${id}`, {
         method: 'PUT',
         headers: buildAuthHeaders(getState),
         body: JSON.stringify(payload),
@@ -79,7 +80,7 @@ export const deleteKbArticle = createAsyncThunk(
   'kb/delete',
   async (id, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/kb/${id}`, {
+      const res = await fetch(`${API_BASE}/kb/${id}`, {
         method: 'DELETE',
         headers: buildAuthHeaders(getState),
       })
@@ -97,7 +98,7 @@ export const toggleKbStatus = createAsyncThunk(
   'kb/toggleStatus',
   async ({ id, toStatus }, { getState, rejectWithValue }) => {
     try {
-      const res = await fetch(`/api/kb/${id}`, {
+      const res = await fetch(`${API_BASE}/kb/${id}`, {
         method: 'PUT',
         headers: buildAuthHeaders(getState),
         body: JSON.stringify({ status: toStatus }),
