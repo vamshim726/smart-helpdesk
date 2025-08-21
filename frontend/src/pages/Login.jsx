@@ -55,6 +55,16 @@ const Login = () => {
           <p className="mt-2 text-sm text-gray-600">or <Link to="/register" className="text-blue-600 hover:text-blue-500 font-medium">create a new account</Link></p>
         </header>
 
+        {/* Sample accounts for assignment */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="text-sm font-medium text-blue-900 mb-2">Sample Accounts</h3>
+          <div className="space-y-1 text-xs text-blue-800">
+            <div><strong>Admin:</strong> admin@gmail.com / 123456</div>
+            <div><strong>Agent:</strong> agent@gmail.com / 123456</div>
+            <div><strong>User:</strong> user1@gmail.com / 123456</div>
+          </div>
+        </div>
+
         {/* feedback via toasts */}
 
         <form onSubmit={handleSubmit} className={`${card} space-y-5`}>
