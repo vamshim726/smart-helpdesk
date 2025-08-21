@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import toast from 'react-hot-toast'
 
 const authHeaders = (getState) => {
   const token = getState().auth.token
@@ -11,7 +12,7 @@ export const loadConfig = createAsyncThunk(
     try {
       const res = await fetch('/api/config', { headers: authHeaders(getState) })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to load configuration'); return rejectWithValue(data) }
       return data.config
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -29,7 +30,8 @@ export const saveConfig = createAsyncThunk(
         body: JSON.stringify(payload),
       })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to save configuration'); return rejectWithValue(data) }
+      toast.success('Configuration saved')
       return data.config
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })

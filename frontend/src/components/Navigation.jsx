@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { logoutUser, selectCurrentUser, selectIsAuthenticated, selectIsAdmin, selectIsAgent } from '../store/authSlice'
@@ -16,6 +16,20 @@ const Navigation = () => {
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const userMenuRef = useRef(null)
+  // Close user menu on outside click or ESC
+  useEffect(() => {
+    const outside = (e) => { if (isUserMenuOpen && userMenuRef.current && !userMenuRef.current.contains(e.target)) setIsUserMenuOpen(false) }
+    const onKey = (e) => { if (isUserMenuOpen && e.key === 'Escape') setIsUserMenuOpen(false) }
+    document.addEventListener('mousedown', outside)
+    document.addEventListener('touchstart', outside)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', outside)
+      document.removeEventListener('touchstart', outside)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [isUserMenuOpen])
 
   const handleLogout = async () => {
     try {
@@ -66,11 +80,7 @@ const Navigation = () => {
                 Tickets
               </Link>
               
-              {(isAgent || isAdmin) && (
-                <Link to="/ticket-management" className={getNavLinkClass('/ticket-management')}>
-                  Ticket Management
-                </Link>
-              )}
+              {/* Ticket Management merged into Tickets page */}
               
               {isAdmin && (
                 <>
@@ -91,7 +101,7 @@ const Navigation = () => {
           {/* User menu and mobile menu button */}
           <div className="flex items-center space-x-3">
             <NotificationBell />
-            <div className="relative ml-1">
+            <div className="relative ml-1" ref={userMenuRef}>
               <div>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}

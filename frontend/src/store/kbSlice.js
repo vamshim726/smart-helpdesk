@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import toast from 'react-hot-toast'
 
 const buildAuthHeaders = (getState) => {
   const token = getState().auth.token
@@ -14,7 +15,7 @@ export const fetchKbList = createAsyncThunk(
       const query = new URLSearchParams(params).toString()
       const res = await fetch(`/api/kb${query ? `?${query}` : ''}`)
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to load articles'); return rejectWithValue(data) }
       return data
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -28,7 +29,7 @@ export const fetchKbArticle = createAsyncThunk(
     try {
       const res = await fetch(`/api/kb/${id}`)
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to load article'); return rejectWithValue(data) }
       return data.article
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -46,7 +47,8 @@ export const createKbArticle = createAsyncThunk(
         body: JSON.stringify(payload),
       })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to create article'); return rejectWithValue(data) }
+      toast.success('KB article created')
       return data.article
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -64,7 +66,8 @@ export const updateKbArticle = createAsyncThunk(
         body: JSON.stringify(payload),
       })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to update article'); return rejectWithValue(data) }
+      toast.success('KB article updated')
       return data.article
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -81,7 +84,8 @@ export const deleteKbArticle = createAsyncThunk(
         headers: buildAuthHeaders(getState),
       })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to delete article'); return rejectWithValue(data) }
+      toast.success('KB article deleted')
       return { id }
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -99,7 +103,8 @@ export const toggleKbStatus = createAsyncThunk(
         body: JSON.stringify({ status: toStatus }),
       })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to update status'); return rejectWithValue(data) }
+      toast.success(`KB article ${toStatus === 'published' ? 'published' : 'unpublished'}`)
       return data.article
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })

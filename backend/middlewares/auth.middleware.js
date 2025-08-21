@@ -66,6 +66,8 @@ const requireUserOrAdmin = requireRole(['user', 'admin']);
 
 // Staff (Agent or Admin)
 const requireStaff = requireRole(['agent', 'admin']);
+// Customers (regular users only)
+const requireCustomer = requireRole('user');
 
 module.exports = { 
 	auth, 
@@ -73,4 +75,5 @@ module.exports = {
 	requireAdmin, 
 	requireUserOrAdmin,
 	requireStaff,
+	requireCustomer,
 };

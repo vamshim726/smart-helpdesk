@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { auth, requireAdmin } = require('../middlewares/auth.middleware');
 const User = require('../models/User');
+const { runOnce: runSlaOnce } = require('../jobs/slaChecker');
 
 // All admin routes require authentication and admin role
 router.use(auth);
@@ -153,3 +154,14 @@ router.get('/stats', async (req, res) => {
 });
 
 module.exports = router;
+
+// SLA manual trigger (admin only)
+router.post('/sla/run-once', async (req, res) => {
+  try {
+    const result = await runSlaOnce();
+    return res.status(200).json({ message: 'SLA checker executed', result });
+  } catch (error) {
+    console.error('Run SLA once error:', error);
+    return res.status(500).json({ message: 'Internal server error', error: 'INTERNAL_ERROR' });
+  }
+});

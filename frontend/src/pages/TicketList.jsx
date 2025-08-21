@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import Navigation from '../components/Navigation'
-import { fetchTickets, selectTickets, selectTicketsLoading, selectTicketsError } from '../store/ticketSlice'
-import { selectCurrentUser } from '../store/authSlice'
+import { fetchTickets, selectTickets, selectTicketsLoading } from '../store/ticketSlice'
+import { selectCurrentUser, selectIsAdmin, selectIsAgent } from '../store/authSlice'
+import { getSocket } from '../utils/socket'
+ 
 
 const btnPrimary = 'inline-flex items-center justify-center px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition cursor-pointer'
 const btnLink = 'text-blue-600 hover:text-blue-900 hover:underline cursor-pointer'
@@ -27,24 +29,46 @@ const TicketList = () => {
   const user = useSelector(selectCurrentUser)
   const items = useSelector(selectTickets)
   const loading = useSelector(selectTicketsLoading)
-  const error = useSelector(selectTicketsError)
+  const isAdmin = useSelector(selectIsAdmin)
+  const isAgent = useSelector(selectIsAgent)
+ 
 
   const [status, setStatus] = useState('')
-  // For admin users, default to showing all tickets; for regular users, default to their own tickets
-  const [mine, setMine] = useState(user?.role === 'admin' ? 'false' : 'true')
+  const [mine, setMine] = useState((isAdmin || isAgent) ? 'false' : 'true')
+  const [assigned, setAssigned] = useState('false')
+
+  const socketBoundRef = useRef(false)
 
   useEffect(() => {
-    dispatch(fetchTickets({ status, mine }))
-  }, [dispatch, mine])
+    const params = (isAdmin || isAgent) ? { status, mine, assigned } : { status, mine }
+    dispatch(fetchTickets(params))
+  }, [dispatch, mine, assigned, status, isAdmin, isAgent])
 
   const handleApply = (e) => {
     e.preventDefault()
-    dispatch(fetchTickets({ status, mine }))
+    const params = (isAdmin || isAgent) ? { status, mine, assigned } : { status, mine }
+    dispatch(fetchTickets(params))
   }
 
-  const isAdmin = user?.role === 'admin'
-  const pageTitle = isAdmin ? 'All Tickets' : 'My Tickets'
-  const pageDescription = isAdmin ? 'Filter and manage all support tickets in the system.' : 'Filter and manage your support tickets.'
+  const pageTitle = (isAdmin || isAgent) ? 'Tickets' : 'My Tickets'
+  const pageDescription = (isAdmin || isAgent) ? 'Filter and manage tickets.' : 'Filter and manage your support tickets.'
+
+  // Re-fetch on realtime notifications
+  useEffect(() => {
+    if (!user) return
+    const socket = getSocket()
+    if (!socket || socketBoundRef.current) return
+    const handler = () => {
+      const params = (isAdmin || isAgent) ? { status, mine, assigned } : { status, mine }
+      dispatch(fetchTickets(params))
+    }
+    socket.on('notification', handler)
+    socketBoundRef.current = true
+    return () => {
+      try { socket.off('notification', handler) } catch {}
+      socketBoundRef.current = false
+    }
+  }, [dispatch, user, isAdmin, isAgent, status, mine, assigned])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -55,18 +79,18 @@ const TicketList = () => {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{pageTitle}</h1>
             <p className="mt-1 text-sm sm:text-base text-gray-600">{pageDescription}</p>
           </div>
-          <Link to="/tickets/new" className={btnPrimary + " cursor-pointer"}>New Ticket</Link>
+          <div className="flex items-center gap-3">
+            {!(isAdmin || isAgent) && (
+              <Link to="/tickets/new" className={btnPrimary + ' cursor-pointer'}>New Ticket</Link>
+            )}
+          </div>
         </header>
 
-        {error && (
-          <div className="mb-4">
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 border border-red-200">{error?.message || 'Error loading tickets'}</div>
-          </div>
-        )}
+        {/* feedback via toasts */}
 
         <section className="mb-6">
-          <form onSubmit={handleApply} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <select className={filterInput + " cursor-pointer"} value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status">
+          <form onSubmit={handleApply} className={`grid grid-cols-1 md:grid-cols-3 gap-4`}>
+            <select className={filterInput + ' cursor-pointer'} value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status">
               <option value="">All Status</option>
               <option value="open">Open</option>
               <option value="triaged">Triaged</option>
@@ -74,14 +98,20 @@ const TicketList = () => {
               <option value="resolved">Resolved</option>
               <option value="closed">Closed</option>
             </select>
-            {isAdmin && (
-              <select className={filterInput + " cursor-pointer"} value={mine} onChange={(e) => setMine(e.target.value)} aria-label="Ownership">
+            {(isAdmin || isAgent) && (
+              <select className={filterInput + ' cursor-pointer'} value={mine} onChange={(e) => setMine(e.target.value)} aria-label="Ownership">
                 <option value="false">All Tickets</option>
                 <option value="true">My Tickets</option>
               </select>
             )}
+            {(isAdmin || isAgent) && (
+              <select className={filterInput + ' cursor-pointer'} value={assigned} onChange={(e) => setAssigned(e.target.value)} aria-label="Assignee">
+                <option value="false">Any Assignee</option>
+                <option value="true">Assigned to Me</option>
+              </select>
+            )}
             <div className="flex md:justify-end">
-              <button type="submit" className={btnPrimary + " cursor-pointer"}>Apply</button>
+              <button type="submit" className={btnPrimary + ' cursor-pointer'}>Apply</button>
             </div>
           </form>
         </section>
@@ -93,7 +123,7 @@ const TicketList = () => {
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  {isAdmin && (
+                  {(isAdmin || isAgent) && (
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
                   )}
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
@@ -108,14 +138,14 @@ const TicketList = () => {
                       <div className="text-xs text-gray-500">Category: {t.category}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap"><StatusBadge status={t.status} /></td>
-                    {isAdmin && (
+                    {(isAdmin || isAgent) && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {t.createdBy?.name || 'Unknown'}
                       </td>
                     )}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(t.createdAt).toLocaleString()}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link to={`/tickets/${t._id}`} className={btnLink + " cursor-pointer"}>View</Link>
+                      <Link to={`/tickets/${t._id}`} className={btnLink + ' cursor-pointer'}>View</Link>
                     </td>
                   </tr>
                 ))}

@@ -26,7 +26,7 @@ const AdminKBEditor = () => {
   const isAdmin = useSelector(selectIsAdmin)
   const current = useSelector(selectKbCurrent)
   const loading = useSelector(selectKbLoading)
-  const error = useSelector(selectKbError)
+  const error = null
 
   const isEdit = Boolean(id && id !== 'new')
 
@@ -58,7 +58,7 @@ const AdminKBEditor = () => {
           <p className="mt-2 text-sm sm:text-base text-gray-600">{isEdit ? 'Update the article details.' : 'Create a new KB article.'}</p>
         </header>
 
-        {error && <div className="mb-4"><div className="rounded-md bg-red-50 p-4 text-sm text-red-700 border border-red-200">{error?.message || 'An error occurred'}</div></div>}
+        {/* feedback via toasts */}
 
         <form onSubmit={handleSubmit} className={`${card} space-y-6`}>
           <div className="space-y-2">
@@ -70,6 +70,7 @@ const AdminKBEditor = () => {
             <label htmlFor="body" className="block text-sm font-medium text-gray-700">Body</label>
             <textarea id="body" name="body" value={form.body} onChange={handleChange} required rows={12} className={`${inputBase} font-mono`} placeholder="Write the content…" />
           </div>
+          
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">

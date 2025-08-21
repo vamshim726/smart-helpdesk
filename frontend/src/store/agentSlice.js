@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import toast from 'react-hot-toast'
 import { v4 as uuidv4 } from 'uuid'
 
 const authHeaders = (getState) => {
@@ -15,7 +16,7 @@ export const fetchSuggestion = createAsyncThunk(
     try {
       const res = await fetch(`/api/agent/suggestion/${ticketId}`, { headers: authHeaders(getState) })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to fetch suggestion'); return rejectWithValue(data) }
       return { ticketId, ...data }
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -29,7 +30,8 @@ export const fetchAuditLogs = createAsyncThunk(
     try {
       const res = await fetch(`/api/agent/logs/${ticketId}`, { headers: authHeaders(getState) })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      // Do not show a toast here to avoid surfacing permission errors to regular users.
+      if (!res.ok) { return rejectWithValue(data) }
       return { ticketId, logs: data.logs }
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -48,7 +50,8 @@ export const agentSendReply = createAsyncThunk(
         body: JSON.stringify({ reply, status, traceId }),
       })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to send reply'); return rejectWithValue(data) }
+      toast.success('Reply sent')
       return { ticketId: id, ...data }
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -77,7 +80,8 @@ export const agentAssign = createAsyncThunk(
         body: JSON.stringify({ assigneeId }),
       })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to assign ticket'); return rejectWithValue(data) }
+      toast.success('Ticket assigned')
       return data
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -93,7 +97,8 @@ export const agentReopen = createAsyncThunk(
         method: 'POST', headers: authHeaders(getState)
       })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to reopen ticket'); return rejectWithValue(data) }
+      toast.success('Ticket reopened')
       return data
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -109,7 +114,8 @@ export const agentClose = createAsyncThunk(
         method: 'POST', headers: authHeaders(getState)
       })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to close ticket'); return rejectWithValue(data) }
+      toast.success('Ticket closed')
       return data
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })

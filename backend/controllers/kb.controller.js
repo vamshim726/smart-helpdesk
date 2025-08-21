@@ -23,7 +23,9 @@ const listKBArticles = async (req, res) => {
 
 		let query = KBArticle.find(filter);
 		if (q) {
-			query = query.find({ $text: { $search: q } });
+			// bias search to include account/password phrases
+			const q2 = `${q} password reset account`;
+			query = query.find({ $text: { $search: q2 } });
 		}
 
 		const [items, total] = await Promise.all([

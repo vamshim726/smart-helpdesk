@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import toast from 'react-hot-toast'
 
 // Async thunk for login
 export const loginUser = createAsyncThunk(
@@ -16,6 +17,7 @@ export const loginUser = createAsyncThunk(
       const data = await response.json()
 
       if (!response.ok) {
+        toast.error(data?.message || 'Login failed')
         return rejectWithValue(data)
       }
 
@@ -23,12 +25,11 @@ export const loginUser = createAsyncThunk(
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
 
+      toast.success('Logged in successfully')
       return data
     } catch (error) {
-      return rejectWithValue({ 
-        message: 'Network error occurred', 
-        error: 'NETWORK_ERROR' 
-      })
+      toast.error('Network error during login')
+      return rejectWithValue({ message: 'Network error occurred', error: 'NETWORK_ERROR' })
     }
   }
 )
@@ -48,20 +49,17 @@ export const registerUser = createAsyncThunk(
 
       const data = await response.json()
 
-      if (!response.ok) {
-        return rejectWithValue(data)
-      }
+      if (!response.ok) { toast.error(data?.message || 'Registration failed'); return rejectWithValue(data) }
 
       // Store token in localStorage for persistence
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
 
+      toast.success('Registration successful')
       return data
     } catch (error) {
-      return rejectWithValue({ 
-        message: 'Network error occurred', 
-        error: 'NETWORK_ERROR' 
-      })
+      toast.error('Network error during registration')
+      return rejectWithValue({ message: 'Network error occurred', error: 'NETWORK_ERROR' })
     }
   }
 )
@@ -74,12 +72,11 @@ export const logoutUser = createAsyncThunk(
       // Clear localStorage
       localStorage.removeItem('token')
       localStorage.removeItem('user')
+      toast.success('Logged out')
       return {}
     } catch (error) {
-      return rejectWithValue({ 
-        message: 'Error during logout', 
-        error: 'LOGOUT_ERROR' 
-      })
+      toast.error('Error during logout')
+      return rejectWithValue({ message: 'Error during logout', error: 'LOGOUT_ERROR' })
     }
   }
 )
@@ -92,12 +89,7 @@ export const fetchUserProfile = createAsyncThunk(
       const state = getState()
       const token = state.auth.token
 
-      if (!token) {
-        return rejectWithValue({ 
-          message: 'No token available', 
-          error: 'NO_TOKEN' 
-        })
-      }
+      if (!token) { return rejectWithValue({ message: 'No token available', error: 'NO_TOKEN' }) }
 
       const response = await fetch('/api/auth/profile', {
         headers: {
@@ -108,16 +100,12 @@ export const fetchUserProfile = createAsyncThunk(
 
       const data = await response.json()
 
-      if (!response.ok) {
-        return rejectWithValue(data)
-      }
+      if (!response.ok) { toast.error(data?.message || 'Failed to fetch profile'); return rejectWithValue(data) }
 
       return data.user
     } catch (error) {
-      return rejectWithValue({ 
-        message: 'Network error occurred', 
-        error: 'NETWORK_ERROR' 
-      })
+      toast.error('Network error while fetching profile')
+      return rejectWithValue({ message: 'Network error occurred', error: 'NETWORK_ERROR' })
     }
   }
 )

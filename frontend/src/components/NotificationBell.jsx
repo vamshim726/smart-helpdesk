@@ -12,6 +12,7 @@ const NotificationBell = () => {
   const unread = useSelector(selectUnreadCount)
   const [open, setOpen] = useState(false)
   const socketRef = useRef(null)
+  const containerRef = useRef(null)
 
   useEffect(() => {
     if (!user) return
@@ -46,6 +47,29 @@ const NotificationBell = () => {
     }
   }, [dispatch, user])
 
+  // Close when clicking outside
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (!open) return
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('touchstart', handleOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('touchstart', handleOutside)
+    }
+  }, [open])
+
+  // Close on Escape key
+  useEffect(() => {
+    const onKey = (e) => { if (open && e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
+
   // Cleanup socket on unmount
   useEffect(() => {
     return () => {
@@ -69,7 +93,7 @@ const NotificationBell = () => {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen(!open)}
         className="relative inline-flex items-center justify-center p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100"

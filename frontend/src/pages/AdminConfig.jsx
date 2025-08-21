@@ -51,16 +51,7 @@ const AdminConfig = () => {
           <p className="mt-2 text-gray-600">Control agent automation settings.</p>
         </div>
 
-        {error && (
-          <div className="px-4 sm:px-0 mb-4">
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">{error?.message || 'Error loading config'}</div>
-          </div>
-        )}
-        {success && (
-          <div className="px-4 sm:px-0 mb-4">
-            <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">{success}</div>
-          </div>
-        )}
+        {/* feedback via toasts */}
 
         <form onSubmit={handleSubmit} className="px-4 sm:px-0 bg-white shadow rounded-lg p-6 space-y-6">
           <div className="flex items-center justify-between">

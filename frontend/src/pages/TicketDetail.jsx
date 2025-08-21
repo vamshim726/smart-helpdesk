@@ -2,9 +2,10 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import Navigation from '../components/Navigation'
 import { useParams } from 'react-router-dom'
-import { fetchTicket, selectTicketCurrent, selectTicketsLoading, selectTicketsError, clearTicketCurrent } from '../store/ticketSlice'
-import { fetchSuggestion, fetchAuditLogs, selectAgentSuggestion, selectAgentLogs, agentSendReply, agentReopen, agentClose, selectAgentLoading } from '../store/agentSlice'
-import { selectIsAdmin, selectIsAgent } from '../store/authSlice'
+import { fetchTicket, selectTicketCurrent, selectTicketsLoading, selectTicketsError, clearTicketCurrent, addTicketReply } from '../store/ticketSlice'
+import { fetchSuggestion, fetchAuditLogs, selectAgentSuggestion, selectAgentLogs, agentSendReply, agentReopen, agentClose, agentAssign, selectAgentLoading } from '../store/agentSlice'
+import { selectIsAdmin, selectIsAgent, selectCurrentUser } from '../store/authSlice'
+import { getSocket } from '../utils/socket'
 
 const card = 'bg-white shadow-sm rounded-lg p-6'
 const label = 'text-sm font-medium text-gray-500'
@@ -30,27 +31,58 @@ const TicketDetail = () => {
   const error = useSelector(selectTicketsError)
   const isAdmin = useSelector(selectIsAdmin)
   const isAgent = useSelector(selectIsAgent)
+  const currentUser = useSelector(selectCurrentUser)
 
   const suggestion = useSelector(selectAgentSuggestion(id))
   const logs = useSelector(selectAgentLogs(id))
   const agentLoading = useSelector(selectAgentLoading)
 
   const [reply, setReply] = useState('')
+  const [userSuggestions, setUserSuggestions] = useState([])
   const isSendingRef = useRef(false)
 
   const canAct = isAdmin || isAgent
 
   useEffect(() => {
     dispatch(fetchTicket(id))
-    dispatch(fetchAuditLogs(id))
+    if (canAct) dispatch(fetchAuditLogs(id))
     return () => dispatch(clearTicketCurrent())
-  }, [dispatch, id])
+  }, [dispatch, id, canAct])
 
   useEffect(() => {
-    if (canAct) dispatch(fetchSuggestion(id))
+    if (canAct) {
+      dispatch(fetchSuggestion(id))
+      dispatch(fetchAuditLogs(id))
+    }
   }, [dispatch, id, canAct])
 
   useEffect(() => { if (suggestion?.reply) setReply(suggestion.reply) }, [suggestion])
+
+  // For non-staff users, fetch KB suggestions client-side
+  useEffect(() => {
+    const fetchUserSuggestions = async () => {
+      try {
+        if (!ticket || canAct) return
+        const q = encodeURIComponent(`${ticket.title} ${ticket.description}`.slice(0, 200))
+        const res = await fetch(`/api/kb?q=${q}`)
+        const data = await res.json()
+        if (res.ok) setUserSuggestions(data.items || [])
+      } catch {}
+    }
+    fetchUserSuggestions()
+  }, [ticket, canAct])
+
+  // Live update on notifications
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket) return
+    const handler = () => {
+      dispatch(fetchTicket(id))
+      if (canAct) dispatch(fetchAuditLogs(id))
+    }
+    socket.on('notification', handler)
+    return () => { try { socket.off('notification', handler) } catch {} }
+  }, [dispatch, id, canAct])
 
   const handleSendReply = async () => {
     if (isSendingRef.current) return
@@ -59,14 +91,38 @@ const TicketDetail = () => {
     isSendingRef.current = true
     try {
       await dispatch(agentSendReply({ id, reply: trimmed })).unwrap()
+      await dispatch(fetchTicket(id))
       dispatch(fetchAuditLogs(id))
     } catch {}
     finally {
       isSendingRef.current = false
     }
   }
+  const handleUserReply = async () => {
+    if (isSendingRef.current) return
+    const trimmed = reply.trim()
+    if (!trimmed) return
+    isSendingRef.current = true
+    try {
+      await dispatch(addTicketReply({ id, body: trimmed })).unwrap()
+      await dispatch(fetchTicket(id))
+      dispatch(fetchAuditLogs(id))
+      setReply('')
+    } catch {}
+    finally {
+      isSendingRef.current = false
+    }
+  }
+  const handleAssignToMe = async () => {
+    try {
+      await dispatch(agentAssign({ id })).unwrap()
+      dispatch(fetchTicket(id))
+    } catch {}
+  }
   const handleReopen = async () => { await dispatch(agentReopen(id)).unwrap(); dispatch(fetchTicket(id)); dispatch(fetchAuditLogs(id)) }
   const handleClose = async () => { await dispatch(agentClose(id)).unwrap(); dispatch(fetchTicket(id)); dispatch(fetchAuditLogs(id)) }
+
+  const isClosedLike = ticket && (ticket.status === 'resolved' || ticket.status === 'closed')
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -77,11 +133,7 @@ const TicketDetail = () => {
           <p className="mt-2 text-sm sm:text-base text-gray-600">Review the ticket information and history.</p>
         </header>
 
-        {error && (
-          <div className="mb-4">
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 border border-red-200">{error?.message || 'Error loading ticket'}</div>
-          </div>
-        )}
+        {/* feedback via toasts */}
 
         {ticket && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -95,7 +147,19 @@ const TicketDetail = () => {
                     <pre className="mt-1 whitespace-pre-wrap font-sans text-gray-900">{ticket.description}</pre>
                   </div>
                   <Field label="Category">{ticket.category}</Field>
-                  <Field label="Assignee">{ticket.assignee ? `${ticket.assignee.name} (${ticket.assignee.email})` : 'Unassigned'}</Field>
+                  <Field label="Assignee">{
+                    isClosedLike ? (
+                      'Closed'
+                    ) : ticket.assignee ? (
+                      `${ticket.assignee.name} (${ticket.assignee.email})`
+                    ) : (
+                      <span>
+                        Unassigned {canAct && (
+                          <button type="button" onClick={handleAssignToMe} className="ml-2 text-blue-600 hover:underline">Assign to me</button>
+                        )}
+                      </span>
+                    )
+                  }</Field>
                   <Field label="Created By">{ticket.createdBy?.name} ({ticket.createdBy?.email})</Field>
                   <Field label="Created At">{new Date(ticket.createdAt).toLocaleString()}</Field>
                   <Field label="Updated At">{new Date(ticket.updatedAt).toLocaleString()}</Field>
@@ -125,6 +189,59 @@ const TicketDetail = () => {
                 </div>
               )}
 
+              {!canAct && (
+                <div className={card}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold text-gray-900">Reply to Ticket</h2>
+                  </div>
+                  <textarea
+                    value={reply}
+                    onChange={(e) => setReply(e.target.value)}
+                    rows={6}
+                    className={`${inputBase} font-sans cursor-pointer`}
+                    aria-label="Your Reply"
+                  />
+                  <div className="mt-4 flex justify-end">
+                    <button type="button" onClick={handleUserReply} disabled={agentLoading || isSendingRef.current} className={btnPrimary + " cursor-pointer"}>{(agentLoading || isSendingRef.current) ? 'Sending…' : 'Send Reply'}</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Replies Thread */}
+              <div className={card}>
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Conversation</h2>
+                <div className="space-y-4">
+                  {ticket.replies?.map((r, idx) => (
+                    <div key={idx} className="border rounded p-3">
+                      <div className="text-sm text-gray-600 flex justify-between">
+                        <span>{r.from === 'user' ? 'User' : r.from === 'agent' ? 'Agent' : 'System'} • {r.author?.name || 'Unknown'}</span>
+                        <span>{new Date(r.createdAt).toLocaleString()}</span>
+                      </div>
+                      <pre className="mt-2 whitespace-pre-wrap font-sans text-gray-900">{r.body}</pre>
+                      {!!r.kbRefs?.length && (
+                        <div className="mt-2 text-sm text-gray-700">
+                          <div className="font-medium">KB References:</div>
+                          <ul className="list-disc pl-5">
+                            {r.kbRefs.map((kb) => (
+                              <li key={kb._id} className="text-blue-700">
+                                {kb.status === 'published' ? (
+                                  <a className="underline" href={`/kb/${kb._id}`} target="_blank" rel="noreferrer">{kb.title}</a>
+                                ) : (
+                                  <span>{kb.title} (unpublished)</span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {(!ticket.replies || ticket.replies.length === 0) && (
+                    <div className="text-sm text-gray-500">No replies yet.</div>
+                  )}
+                </div>
+              </div>
+
               <div className={card}>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Audit Log</h2>
                 <div className="space-y-3">
@@ -147,13 +264,19 @@ const TicketDetail = () => {
               <div className={card}>
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Suggested KB Articles</h2>
                 <div className="space-y-3">
-                  {suggestion?.articles?.map((a) => (
+                  {(canAct ? suggestion?.articles : userSuggestions)?.map((a) => (
                     <div key={a._id} className="text-sm">
-                      <div className="font-medium text-gray-900">{a.title}</div>
+                      <div className="font-medium text-gray-900">
+                        {a.status === 'published' ? (
+                          <a className="text-blue-700 underline" href={`/kb/${a._id}`} target="_blank" rel="noreferrer">{a.title}</a>
+                        ) : (
+                          a.title
+                        )}
+                      </div>
                       <div className="text-gray-500">Last updated: {new Date(a.updatedAt).toLocaleDateString()}</div>
                     </div>
                   ))}
-                  {!suggestion?.articles?.length && <div className="text-sm text-gray-500">No suggestions.</div>}
+                  {!(canAct ? suggestion?.articles?.length : userSuggestions?.length) && <div className="text-sm text-gray-500">No suggestions.</div>}
                 </div>
               </div>
             </aside>

@@ -16,6 +16,7 @@ import TicketList from './pages/TicketList'
 import TicketCreate from './pages/TicketCreate'
 import TicketDetail from './pages/TicketDetail'
 import AdminConfig from './pages/AdminConfig'
+import KBArticleView from './pages/KBArticleView'
 
 // App Routes Component (needs to be inside Redux Provider)
 const AppRoutes = () => {
@@ -85,6 +86,9 @@ const AppRoutes = () => {
             </AdminRoute>
           } />
 
+          {/* Public KB view for published articles */}
+          <Route path="/kb/:id" element={<KBArticleView />} />
+
           {/* Admin config */}
           <Route path="/admin/config" element={
             <AdminRoute>
@@ -93,24 +97,7 @@ const AppRoutes = () => {
           } />
 
           {/* Agent and Admin routes */}
-          <Route path="/ticket-management" element={
-            <StaffRoute>
-              <div className="min-h-screen bg-gray-50">
-                <Navigation />
-                <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                  <div className="px-4 py-6 sm:px-0">
-                    <h1 className="text-3xl font-bold text-gray-900">Ticket Management</h1>
-                    <p className="mt-2 text-gray-600">Manage and resolve support tickets.</p>
-                  </div>
-                  <div className="px-4 sm:px-0">
-                    <div className="bg-white shadow rounded-lg p-6">
-                      <p className="text-gray-500">Ticket management interface coming soon...</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </StaffRoute>
-          } />
+          {/* Ticket Management merged into Tickets page */}
 
           {/* Default redirect */}
           <Route path="/" element={

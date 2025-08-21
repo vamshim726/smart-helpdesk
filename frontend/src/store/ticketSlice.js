@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import toast from 'react-hot-toast'
 
 const authHeaders = (getState) => {
   const token = getState().auth.token
@@ -15,7 +16,8 @@ export const createTicket = createAsyncThunk(
         body: JSON.stringify(payload),
       })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to create ticket'); return rejectWithValue(data) }
+      toast.success('Ticket created')
       return data.ticket
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -32,7 +34,7 @@ export const fetchTickets = createAsyncThunk(
         headers: authHeaders(getState),
       })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { if (data?.message) toast.error(data.message); return rejectWithValue(data) }
       return data
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -48,7 +50,26 @@ export const fetchTicket = createAsyncThunk(
         headers: authHeaders(getState),
       })
       const data = await res.json()
-      if (!res.ok) return rejectWithValue(data)
+      if (!res.ok) { toast.error(data?.message || 'Failed to load ticket'); return rejectWithValue(data) }
+      return data.ticket
+    } catch (e) {
+      return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
+    }
+  }
+)
+
+export const addTicketReply = createAsyncThunk(
+  'tickets/addReply',
+  async ({ id, body, kbRefs, status }, { getState, rejectWithValue }) => {
+    try {
+      const res = await fetch(`/api/tickets/${id}/replies`, {
+        method: 'POST',
+        headers: authHeaders(getState),
+        body: JSON.stringify({ body, kbRefs, status }),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast.error(data?.message || 'Failed to send reply'); return rejectWithValue(data) }
+      toast.success('Reply sent')
       return data.ticket
     } catch (e) {
       return rejectWithValue({ message: 'Network error', error: 'NETWORK_ERROR' })
@@ -94,6 +115,13 @@ const ticketSlice = createSlice({
       .addCase(fetchTicket.pending, (state) => { state.loading = true; state.error = null })
       .addCase(fetchTicket.fulfilled, (state, action) => { state.loading = false; state.current = action.payload })
       .addCase(fetchTicket.rejected, (state, action) => { state.loading = false; state.error = action.payload || action.error })
+
+      .addCase(addTicketReply.fulfilled, (state, action) => {
+        // Update current ticket thread if open
+        if (state.current && state.current._id === action.payload._id) {
+          state.current = action.payload
+        }
+      })
   }
 })
 

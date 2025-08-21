@@ -22,14 +22,13 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      // For admin users, fetch all tickets to show total counts
-      // For regular users, fetch only their own tickets
+      // Admin: all tickets; Agent: assigned; User: mine
       if (user.role === 'admin') {
-        console.log('Fetching all tickets for admin user')
-        dispatch(fetchTickets({})) // Fetch all tickets
+        dispatch(fetchTickets({}))
+      } else if (user.role === 'agent') {
+        dispatch(fetchTickets({ assigned: 'true' }))
       } else {
-        console.log('Fetching user tickets for regular user')
-        dispatch(fetchTickets({ mine: 'true' })) // Fetch only user's tickets
+        dispatch(fetchTickets({ mine: 'true' }))
       }
     }
   }, [dispatch, isAuthenticated, user?.role, user?.id])
@@ -56,7 +55,7 @@ const Dashboard = () => {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
             <p className="mt-1 text-sm sm:text-base text-gray-600 dark:text-gray-300">
               Welcome back, {user?.name}. 
-              {user?.role === 'admin' ? ' Here\'s an overview of all tickets.' : ' Here\'s a quick overview of your tickets.'}
+              {user?.role === 'admin' ? ' Here\'s an overview of all tickets.' : user?.role === 'agent' ? ' Here\'s an overview of your assigned tickets.' : ' Here\'s a quick overview of your tickets.'}
             </p>
           </div>
           <button onClick={handleLogout} className="inline-flex items-center justify-center px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition cursor-pointer">Logout</button>
@@ -71,7 +70,7 @@ const Dashboard = () => {
               </div>
               <div className="ml-4">
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  {user?.role === 'admin' ? 'Total Tickets' : 'My Tickets'}
+                  {user?.role === 'admin' ? 'Total Tickets' : user?.role === 'agent' ? 'Assigned Tickets' : 'My Tickets'}
                 </dt>
                 <dd className="text-xl font-semibold text-gray-900 dark:text-white">{totalTickets}</dd>
               </div>
@@ -107,20 +106,22 @@ const Dashboard = () => {
 
         {/* Quick actions */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <button className={quickCard} onClick={() => navigate('/tickets/new')}>
-            <div>
-              <span className="rounded-lg inline-flex p-3 bg-blue-50 text-blue-700 ring-4 ring-white dark:ring-gray-900 dark:bg-blue-900/30">
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6"/></svg>
-              </span>
-            </div>
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                <span className="absolute inset-0" aria-hidden="true" />
-                Create New Ticket
-              </h3>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Submit a new support ticket for assistance.</p>
-            </div>
-          </button>
+          {user?.role === 'user' && (
+            <button className={quickCard} onClick={() => navigate('/tickets/new')}>
+              <div>
+                <span className="rounded-lg inline-flex p-3 bg-blue-50 text-blue-700 ring-4 ring-white dark:ring-gray-900 dark:bg-blue-900/30">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6"/></svg>
+                </span>
+              </div>
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <span className="absolute inset-0" aria-hidden="true" />
+                  Create New Ticket
+                </h3>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Submit a new support ticket for assistance.</p>
+              </div>
+            </button>
+          )}
 
           <button className={quickCard} onClick={() => navigate('/tickets')}>
             <div>
@@ -130,10 +131,10 @@ const Dashboard = () => {
             </div>
             <div className="mt-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {user?.role === 'admin' ? 'View All Tickets' : 'View My Tickets'}
+                {user?.role === 'admin' ? 'View All Tickets' : user?.role === 'agent' ? 'View Assigned Tickets' : 'View My Tickets'}
               </h3>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                {user?.role === 'admin' ? 'Check the status of all tickets in the system.' : 'Check the status of your existing tickets.'}
+                {user?.role === 'admin' ? 'Check the status of all tickets in the system.' : user?.role === 'agent' ? 'Check the status of tickets assigned to you.' : 'Check the status of your existing tickets.'}
               </p>
             </div>
           </button>

@@ -7,8 +7,8 @@ const ticketSchema = new mongoose.Schema(
 		category: {
 			type: String,
 			enum: {
-				values: ['billing', 'tech', 'shipping', 'other'],
-				message: 'Category must be one of billing, tech, shipping, other',
+				values: ['billing', 'tech', 'shipping', 'account', 'other'],
+				message: 'Category must be one of billing, tech, shipping, account, other',
 			},
 			default: 'other',
 		},
@@ -23,6 +23,16 @@ const ticketSchema = new mongoose.Schema(
 		createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 		assignee: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 		agentSuggestion: { type: mongoose.Schema.Types.ObjectId, ref: 'KBArticle', default: null },
+		// Replies thread
+		replies: [
+			{
+				author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+				body: { type: String, required: true },
+				from: { type: String, enum: ['user', 'agent', 'system'], default: 'agent' },
+				kbRefs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'KBArticle' }],
+				createdAt: { type: Date, default: Date.now },
+			},
+		],
 		// SLA tracking
 		slaBreached: { type: Boolean, default: false, index: true },
 		slaBreachedAt: { type: Date, default: null },
@@ -35,6 +45,7 @@ ticketSchema.index({ createdBy: 1, createdAt: -1 });
 ticketSchema.index({ assignee: 1 });
 ticketSchema.index({ status: 1 });
 ticketSchema.index({ updatedAt: -1 });
+ticketSchema.index({ 'replies.createdAt': -1 });
 
 const Ticket = mongoose.model('Ticket', ticketSchema);
 module.exports = Ticket;

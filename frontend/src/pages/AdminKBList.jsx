@@ -33,7 +33,7 @@ const AdminKBList = () => {
   const isAdmin = useSelector(selectIsAdmin)
   const items = useSelector(selectKbItems)
   const loading = useSelector(selectKbLoading)
-  const error = useSelector(selectKbError)
+  const error = null
 
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('')
@@ -68,11 +68,7 @@ const AdminKBList = () => {
           <Link to="/admin/kb/new" className={btnPrimary}>New Article</Link>
         </header>
 
-        {error && (
-          <div className="mb-4">
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 border border-red-200">{error?.message || 'Error loading KB'}</div>
-          </div>
-        )}
+        {/* feedback via toasts */}
 
         <section className="mb-6">
           <form onSubmit={handleSearch} className="grid grid-cols-1 lg:grid-cols-4 gap-4">

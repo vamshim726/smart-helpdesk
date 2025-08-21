@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import Navigation from '../components/Navigation'
-import { createTicket, selectTicketsLoading, selectTicketsError } from '../store/ticketSlice'
+import { createTicket, selectTicketsLoading } from '../store/ticketSlice'
 import { useNavigate } from 'react-router-dom'
 
 const inputBase = 'w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400'
@@ -12,7 +12,7 @@ const TicketCreate = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const loading = useSelector(selectTicketsLoading)
-  const error = useSelector(selectTicketsError)
+  const error = null
 
   const [form, setForm] = useState({ title: '', description: '', category: 'other' })
 
@@ -38,11 +38,7 @@ const TicketCreate = () => {
           <p className="mt-2 text-sm sm:text-base text-gray-600">Describe your issue and submit a ticket. Fields marked with <span className="text-red-600">*</span> are required.</p>
         </header>
 
-        {error && (
-          <div className="mb-6">
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 border border-red-200">{error?.message || 'An error occurred'}</div>
-          </div>
-        )}
+        {/* feedback via toasts */}
 
         <form onSubmit={handleSubmit} className={`${card} space-y-6`}>
           <div className="space-y-2">
