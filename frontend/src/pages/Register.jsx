@@ -29,7 +29,8 @@ const Register = () => {
   const handleBlur = (e) => {
     const { name } = e.target
     setTouched(prev => ({ ...prev, [name]: true }))
-    const v = validateForm({ [name]: formData[name] }, 'register')
+    // Validate against the full form so password/confirmPassword comparisons work correctly
+    const v = validateForm(formData, 'register')
     if (v.errors[name]) setValidationErrors(prev => ({ ...prev, [name]: v.errors[name] }))
   }
 
