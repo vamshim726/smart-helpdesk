@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
 
 const connectToDatabase = async () => {
-	const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/smart-helpdesk';
+	const mongoUri = process.env.MONGO_URI;
+	
 	mongoose.set('strictQuery', false);
 	await mongoose.connect(mongoUri, {});
-	console.log('Connected to MongoDB');
+	console.log(mongoUri);
+	console.log('Connected to MongoDBSS');
 };
 
 module.exports = { connectToDatabase };
