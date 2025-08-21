@@ -19,8 +19,7 @@ const NotificationBell = () => {
     
     dispatch(fetchNotifications())
     
-    const userId = user.id || user._id;
-    console.log('Connecting socket with user ID:', userId);
+    const userId = user.id || user._id; 
     
     // Only create one socket connection
     if (!socketRef.current) {
@@ -34,8 +33,7 @@ const NotificationBell = () => {
     
     // Add the notification listener
     socket.on('notification', (payload) => {
-      console.log('Received notification via Socket.IO:', payload);
-      console.log('Notification _id:', payload._id);
+      console.log('Received notification via Socket.IO' ); 
       dispatch(pushNotification(payload))
     })
     
@@ -122,8 +120,7 @@ const NotificationBell = () => {
                     {n._id ? (
                       <button 
                         onClick={() => {
-                          console.log('Marking notification as read, ID:', n._id); // Debug log
-                          onMarkRead(n._id);
+                           onMarkRead(n._id);
                         }} 
                         className="text-xs text-blue-600 hover:underline"
                       >
