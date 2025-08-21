@@ -17,7 +17,7 @@ const app = express();
 // Middlewares
 // CORS configuration
 const corsOptions = {
-	origin: ["http://localhost:5173", "http://localhost:3000", "http://localhost:4173"], 
+	origin: ["http://localhost:5173", "http://localhost:3000", "http://localhost:4173","https://smart-helpdesk-woad.vercel.app"], 
 	credentials: true,
 	methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 	allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
