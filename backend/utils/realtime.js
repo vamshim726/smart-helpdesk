@@ -25,13 +25,11 @@ const initRealtime = (server) => {
 		console.log(`Socket.IO client connected: ${socket.id}`);
 		
 		// client should emit 'auth' event with userId after connecting
-		socket.on('auth', (userId) => {
-			console.log(`Socket.IO auth for user: ${userId}`);
+		socket.on('auth', (userId) => { 
 			if (!userId) return;
 			if (!userIdToSocketIds.has(userId)) userIdToSocketIds.set(userId, new Set());
 			userIdToSocketIds.get(userId).add(socket.id);
-			socket.join(`user:${userId}`);
-			console.log(`User ${userId} joined room: user:${userId}`);
+			socket.join(`user:${userId}`); 
 		});
 
 		socket.on('disconnect', (reason) => {

@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://smart-helpdesk-lt3h.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
